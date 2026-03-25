@@ -55,12 +55,13 @@ async function runScan() {
   hideResult();
 
   try {
-    const formData = new FormData();
-    formData.append('file', selectedFile);
+    const arrayBuffer = await selectedFile.arrayBuffer();
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
 
     const res = await fetch(`${API_BASE}/predict/eml`, {
       method: 'POST',
-      body: formData,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename: selectedFile.name, content: base64 }),
     });
 
     if (!res.ok) {
