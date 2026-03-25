@@ -9,9 +9,11 @@ import os
 from pathlib import Path
 from typing import Optional
 
+import email
+from email import policy as email_policy
 import numpy as np
 import torch
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from transformers import (
@@ -183,3 +185,70 @@ def predict_batch(texts: list[str], model: str = "ensemble"):
         req = PredictRequest(text=text, model=model)
         results.append(predict(req))
     return results
+
+
+# ── EML helper ────────────────────────────────────────────────────────────────
+
+def extract_text_from_eml(raw_bytes: bytes) -> str:
+    """Parse a .eml file and return a single string with subject + body text."""
+    msg = email.message_from_bytes(raw_bytes, policy=email_policy.default)
+
+    parts = []
+
+    # Subject line
+    subject = msg.get("subject", "")
+    if subject:
+        parts.append(f"Subject: {subject}")
+
+    # From / To for extra signal
+    from_addr = msg.get("from", "")
+    if from_addr:
+        parts.append(f"From: {from_addr}")
+
+    # Walk MIME parts for text content
+    if msg.is_multipart():
+        for part in msg.walk():
+            ct = part.get_content_type()
+            cd = str(part.get("Content-Disposition", ""))
+            if ct == "text/plain" and "attachment" not in cd:
+                parts.append(part.get_content())
+            elif ct == "text/html" and "attachment" not in cd and not any(p.startswith("Subject") or "plain" in p for p in parts):
+                # Fallback to HTML only if no plain text found
+                import html as html_lib
+                raw_html = part.get_content()
+                # Very light strip — remove tags
+                import re
+                text = re.sub(r"<[^>]+>", " ", raw_html)
+                text = html_lib.unescape(text)
+                text = re.sub(r"\s+", " ", text).strip()
+                parts.append(text)
+    else:
+        parts.append(msg.get_content())
+
+    return "\n".join(parts).strip()
+
+
+@app.post("/predict/eml", response_model=PredictResponse)
+async def predict_eml(file: UploadFile = File(...)):
+    if not file.filename.endswith(".eml"):
+        raise HTTPException(status_code=422, detail="Only .eml files are accepted.")
+
+    raw = await file.read()
+    if len(raw) > 5 * 1024 * 1024:  # 5 MB guard
+        raise HTTPException(status_code=413, detail="File too large (max 5 MB).")
+
+    try:
+        text = extract_text_from_eml(raw)
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Failed to parse .eml: {e}")
+
+    if not text.strip():
+        raise HTTPException(status_code=422, detail="Could not extract any text from the .eml file.")
+
+    analyzed_text = text.strip()
+    print("\n=== [EMAIL SCAN] Content analyzed ===")
+    print(analyzed_text)
+    print("=== [END EMAIL CONTENT] ===\n")
+
+    # Reuse the existing ensemble prediction logic
+    return predict(PredictRequest(text=analyzed_text, model="ensemble"))

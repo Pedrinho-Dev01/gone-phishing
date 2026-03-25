@@ -1,26 +1,66 @@
 // ── Config ──────────────────────────────────────────────────────────────────
 const API_BASE = 'http://localhost:8000';
 
-// ── Char counter ─────────────────────────────────────────────────────────────
-const input = document.getElementById('msg-input');
-input.addEventListener('input', () => {
-  document.getElementById('char-count').textContent = `${input.value.length} / 2000`;
+let selectedFile = null;
+
+// ── File input ───────────────────────────────────────────────────────────────
+const emlInput = document.getElementById('eml-input');
+const dropArea = document.getElementById('drop-area');
+
+emlInput.addEventListener('change', () => {
+  if (emlInput.files[0]) setFile(emlInput.files[0]);
 });
+
+// Drag and drop
+dropArea.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropArea.classList.add('dragover');
+});
+
+dropArea.addEventListener('dragleave', () => {
+  dropArea.classList.remove('dragover');
+});
+
+dropArea.addEventListener('drop', e => {
+  e.preventDefault();
+  dropArea.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.eml')) {
+    setFile(file);
+  } else {
+    showError('Please drop a valid .eml file.');
+  }
+});
+
+function setFile(file) {
+  selectedFile = file;
+  document.getElementById('file-name').textContent = file.name;
+  dropArea.classList.add('has-file');
+  dropArea.querySelector('.drop-icon').textContent = '✉️';
+  dropArea.querySelector('.drop-primary').innerHTML = `<strong>${file.name}</strong>`;
+  dropArea.querySelector('.drop-secondary').textContent = `${(file.size / 1024).toFixed(1)} KB — click to change`;
+  hideError();
+  hideResult();
+}
 
 // ── Scan ─────────────────────────────────────────────────────────────────────
 async function runScan() {
-  const text = input.value.trim();
-  if (!text) return;
+  if (!selectedFile) {
+    showError('Please select a .eml file first.');
+    return;
+  }
 
   setLoading(true);
   hideError();
   hideResult();
 
   try {
-    const res = await fetch(`${API_BASE}/predict`, {
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    const res = await fetch(`${API_BASE}/predict/eml`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, model: 'ensemble' }),
+      body: formData,
     });
 
     if (!res.ok) {
@@ -87,7 +127,7 @@ function renderResult(data) {
 function setLoading(on) {
   document.getElementById('scan-btn').disabled = on;
   document.getElementById('spinner').style.display = on ? 'block' : 'none';
-  document.getElementById('btn-label').textContent  = on ? 'Scanning…' : 'Scan message';
+  document.getElementById('btn-label').textContent  = on ? 'Scanning…' : 'Scan email';
 }
 
 function hideResult() {
@@ -97,8 +137,13 @@ function hideResult() {
 }
 
 function clearAll() {
-  input.value = '';
-  document.getElementById('char-count').textContent = '0 / 2000';
+  selectedFile = null;
+  document.getElementById('eml-input').value = '';
+  document.getElementById('file-name').textContent = 'No file selected';
+  dropArea.classList.remove('has-file', 'dragover');
+  dropArea.querySelector('.drop-icon').textContent = '📨';
+  dropArea.querySelector('.drop-primary').innerHTML = 'Drop your <strong>.eml</strong> file here';
+  dropArea.querySelector('.drop-secondary').textContent = 'or click to browse';
   hideResult();
   hideError();
 }
@@ -114,14 +159,9 @@ function hideError() {
 }
 
 function copyAPI() {
-  navigator.clipboard.writeText(`${API_BASE}/predict`).then(() => {
+  navigator.clipboard.writeText(`${API_BASE}/predict/eml`).then(() => {
     const btn = document.querySelector('.copy-btn');
     btn.textContent = '✓';
     setTimeout(() => btn.textContent = '⎘', 1500);
   });
 }
-
-// Enter to submit (Shift+Enter = newline)
-input.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); runScan(); }
-});

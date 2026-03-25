@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gone Phishing</title>
+  <title>Gone Phishing — Spam Detection</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
@@ -12,15 +12,13 @@
 <div class="wrap">
 
   <header>
-    <div class="logo-mark">
-      <span class="logo-name">Gone Phishing</span>
-    </div>
+    <h1>Gone<br /><span>Phishing.</span></h1>
   </header>
 
   <!-- API URL hint -->
   <div class="api-hint">
     <span>API</span>
-    <code id="api-url">http://localhost:8000/predict</code>
+    <code id="api-url">http://localhost:8000/predict/eml</code>
     <button class="copy-btn" onclick="copyAPI()" title="Copy URL">⎘</button>
   </div>
 
@@ -28,17 +26,21 @@
   <div class="error-banner" id="error-banner"></div>
 
   <!-- Input -->
-  <div class="input-card">
+  <div class="input-card" id="drop-zone">
     <div class="input-label">
-      <span>Message to analyse</span>
-      <span id="char-count">0 / 2000</span>
+      <span>Email file</span>
+      <span id="file-name">No file selected</span>
     </div>
-    <textarea id="msg-input" maxlength="2000"
-      placeholder="Paste an email, SMS, or any text here…"></textarea>
+    <div class="drop-area" id="drop-area" onclick="document.getElementById('eml-input').click()">
+      <div class="drop-icon">📨</div>
+      <p class="drop-primary">Drop your <strong>.eml</strong> file here</p>
+      <p class="drop-secondary">or click to browse</p>
+    </div>
+    <input type="file" id="eml-input" accept=".eml" style="display:none" />
     <div class="btn-row">
       <button class="btn-scan" id="scan-btn" onclick="runScan()">
         <div class="spinner" id="spinner"></div>
-        <span id="btn-label">Scan message</span>
+        <span id="btn-label">Scan email</span>
       </button>
       <button class="btn-clear" onclick="clearAll()">Clear</button>
     </div>
@@ -79,7 +81,7 @@
   </div>
 
   <footer>
-    Gone Phishing <span>·</span> RoBERTa F1 0.917 <span>·</span> ELECTRA F1 0.905
+    Gone Phishing <span>·</span> RoBERTa F1 0.917 <span>·</span> ELECTRA F1 0.905 <span>·</span> .eml input
   </footer>
 
 </div>
