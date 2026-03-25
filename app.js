@@ -80,18 +80,37 @@ async function runScan() {
 }
 
 function renderResult(data) {
-  const isSpam = data.is_spam;
-  const prob   = data.spam_probability;
-  const pct    = Math.round(prob * 100);
+  const isSpam   = data.is_spam;
+  const isMaybe  = data.maybe_spam;
+  const prob     = data.spam_probability;
+  const pct      = Math.round(prob * 100);
+  const upperPct = Math.round((data.maybe_spam_upper_threshold ?? 0.5) * 100);
 
   const card = document.getElementById('result-card');
-  card.className = 'result-card ' + (isSpam ? 'spam' : 'ham');
 
-  document.getElementById('verdict-icon').textContent = isSpam ? '🚨' : '✅';
-  document.getElementById('verdict-text').textContent = isSpam ? 'Spam detected' : 'Looks clean';
-  document.getElementById('verdict-sub').textContent  = isSpam
-    ? 'Classified as spam by the ensemble'
-    : 'No spam signals found — classified as ham';
+  // Three-state class
+  if (isSpam) {
+    card.className = 'result-card spam';
+  } else if (isMaybe) {
+    card.className = 'result-card maybe';
+  } else {
+    card.className = 'result-card ham';
+  }
+
+  // Icon / headline / sub
+  if (isSpam) {
+    document.getElementById('verdict-icon').textContent = '🚨';
+    document.getElementById('verdict-text').textContent = 'Spam detected';
+    document.getElementById('verdict-sub').textContent  = 'Classified as spam by the ensemble';
+  } else if (isMaybe) {
+    document.getElementById('verdict-icon').textContent = '⚠️';
+    document.getElementById('verdict-text').textContent = 'Maybe spam';
+    document.getElementById('verdict-sub').textContent  = `The email has some spam signals but is not classified as spam by the ensemble`;
+  } else {
+    document.getElementById('verdict-icon').textContent = '✅';
+    document.getElementById('verdict-text').textContent = 'Looks clean';
+    document.getElementById('verdict-sub').textContent  = 'No spam signals found — classified as ham';
+  }
 
   document.getElementById('prob-big').textContent = pct + '%';
   document.getElementById('threshold-label').textContent =
@@ -106,21 +125,35 @@ function renderResult(data) {
   if (data.roberta) {
     const rp = Math.round(data.roberta.spam_probability * 100);
     document.getElementById('roberta-prob').textContent = rp + '%';
-    document.getElementById('roberta-prob').className = 'm-prob ' + (data.roberta.is_spam ? 'col-spam' : 'col-ham');
-    document.getElementById('roberta-verdict').textContent = data.roberta.is_spam ? '🚨 Spam' : '✅ Ham';
-    document.getElementById('roberta-verdict').className = 'm-verdict ' + (data.roberta.is_spam ? 'col-spam' : 'col-ham');
+    document.getElementById('roberta-prob').className = 'm-prob ' + modelColorClass(data.roberta.spam_probability, data.roberta.threshold);
+    document.getElementById('roberta-verdict').textContent = modelVerdictLabel(data.roberta.spam_probability, data.roberta.threshold);
+    document.getElementById('roberta-verdict').className = 'm-verdict ' + modelColorClass(data.roberta.spam_probability, data.roberta.threshold);
   }
 
   if (data.electra) {
     const ep = Math.round(data.electra.spam_probability * 100);
     document.getElementById('electra-prob').textContent = ep + '%';
-    document.getElementById('electra-prob').className = 'm-prob ' + (data.electra.is_spam ? 'col-spam' : 'col-ham');
-    document.getElementById('electra-verdict').textContent = data.electra.is_spam ? '🚨 Spam' : '✅ Ham';
-    document.getElementById('electra-verdict').className = 'm-verdict ' + (data.electra.is_spam ? 'col-spam' : 'col-ham');
+    document.getElementById('electra-prob').className = 'm-prob ' + modelColorClass(data.electra.spam_probability, data.electra.threshold);
+    document.getElementById('electra-verdict').textContent = modelVerdictLabel(data.electra.spam_probability, data.electra.threshold);
+    document.getElementById('electra-verdict').className = 'm-verdict ' + modelColorClass(data.electra.spam_probability, data.electra.threshold);
   }
 
   // Animate in
   requestAnimationFrame(() => { card.classList.add('visible'); });
+}
+
+function modelColorClass(prob, threshold) {
+  const upper = 0.5;
+  if (prob >= upper)            return 'col-spam';
+  if (prob >= threshold)        return 'col-maybe';
+  return 'col-ham';
+}
+
+function modelVerdictLabel(prob, threshold) {
+  const upper = 0.5;
+  if (prob >= upper)     return '🚨 Spam';
+  if (prob >= threshold) return '⚠️ Maybe';
+  return '✅ Ham';
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

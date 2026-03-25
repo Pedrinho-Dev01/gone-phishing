@@ -32,6 +32,8 @@ ELECTRA_DIR = MODELS_DIR / "electra_large_final"
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
+MAYBE_SPAM_UPPER = 0.50   # [threshold, MAYBE_SPAM_UPPER) → "maybe spam"
+
 
 # ── App ───────────────────────────────────────────────────────────────────────
 
@@ -109,10 +111,21 @@ class PredictResponse(BaseModel):
     text: str
     model_used: str
     is_spam: bool
+    maybe_spam: bool
     spam_probability: float
     ensemble_threshold: float
+    maybe_spam_upper_threshold: float
     roberta: Optional[ModelResult] = None
     electra: Optional[ModelResult] = None
+
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def classify(proba: float, threshold: float) -> dict:
+    """Return is_spam and maybe_spam flags for a given probability."""
+    maybe_spam = threshold <= proba < MAYBE_SPAM_UPPER
+    is_spam    = proba >= MAYBE_SPAM_UPPER
+    return {"is_spam": is_spam, "maybe_spam": maybe_spam}
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
@@ -145,12 +158,12 @@ def predict(req: PredictRequest):
 
     roberta_result = ModelResult(
         spam_probability=round(roberta_proba, 4),
-        is_spam=roberta_proba >= roberta_bundle.threshold,
+        is_spam=roberta_proba >= MAYBE_SPAM_UPPER,
         threshold=roberta_bundle.threshold,
     )
     electra_result = ModelResult(
         spam_probability=round(electra_proba, 4),
-        is_spam=electra_proba >= electra_bundle.threshold,
+        is_spam=electra_proba >= MAYBE_SPAM_UPPER,
         threshold=electra_bundle.threshold,
     )
 
@@ -165,12 +178,16 @@ def predict(req: PredictRequest):
         final_proba = (roberta_proba + electra_proba) / 2
         ensemble_threshold = (roberta_bundle.threshold + electra_bundle.threshold) / 2
 
+    flags = classify(final_proba, ensemble_threshold)
+
     return PredictResponse(
         text=req.text,
         model_used=model_key,
-        is_spam=final_proba >= ensemble_threshold,
+        is_spam=flags["is_spam"],
+        maybe_spam=flags["maybe_spam"],
         spam_probability=round(final_proba, 4),
         ensemble_threshold=ensemble_threshold,
+        maybe_spam_upper_threshold=MAYBE_SPAM_UPPER,
         roberta=roberta_result,
         electra=electra_result,
     )

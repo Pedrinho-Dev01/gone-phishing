@@ -9,6 +9,8 @@
   --accent-lo: #6c72ff18;
   --spam:      #ff4f6b;
   --spam-lo:   #ff4f6b18;
+  --maybe:     #f5a623;
+  --maybe-lo:  #f5a62318;
   --ham:       #2ecc8f;
   --ham-lo:    #2ecc8f18;
   --radius:    12px;
@@ -93,7 +95,7 @@ header {
 
 h1 {
   font-family: 'Playfair Display', serif;
-  font-size: clamp(3.8rem, 12vw, 7rem);
+  font-size: clamp(2.85rem, 9vw, 5.25rem);
   font-weight: 900;
   line-height: 0.95;
   letter-spacing: -0.03em;
@@ -256,6 +258,7 @@ h1 span { color: var(--accent); }
 .result-card.visible { opacity: 1; transform: translateY(0); }
 
 .result-card.spam  { border-color: var(--spam); }
+.result-card.maybe { border-color: var(--maybe); }
 .result-card.ham   { border-color: var(--ham); }
 
 .result-header {
@@ -265,8 +268,9 @@ h1 span { color: var(--accent); }
   gap: 14px;
 }
 
-.result-card.spam .result-header { background: var(--spam-lo); }
-.result-card.ham  .result-header { background: var(--ham-lo); }
+.result-card.spam  .result-header { background: var(--spam-lo); }
+.result-card.maybe .result-header { background: var(--maybe-lo); }
+.result-card.ham   .result-header { background: var(--ham-lo); }
 
 .verdict-icon {
   font-size: 28px;
@@ -283,8 +287,9 @@ h1 span { color: var(--accent); }
   line-height: 1.1;
 }
 
-.result-card.spam .verdict-label h2 { color: var(--spam); }
-.result-card.ham  .verdict-label h2 { color: var(--ham); }
+.result-card.spam  .verdict-label h2 { color: var(--spam); }
+.result-card.maybe .verdict-label h2 { color: var(--maybe); }
+.result-card.ham   .verdict-label h2 { color: var(--ham); }
 
 .verdict-label p {
   font-size: 13px;
@@ -299,8 +304,9 @@ h1 span { color: var(--accent); }
   line-height: 1;
 }
 
-.result-card.spam .prob-big { color: var(--spam); }
-.result-card.ham  .prob-big { color: var(--ham); }
+.result-card.spam  .prob-big { color: var(--spam); }
+.result-card.maybe .prob-big { color: var(--maybe); }
+.result-card.ham   .prob-big { color: var(--ham); }
 
 /* ── Progress bar ── */
 .prob-bar-wrap {
@@ -322,8 +328,9 @@ h1 span { color: var(--accent); }
   transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.result-card.spam .prob-bar-fill { background: var(--spam); }
-.result-card.ham  .prob-bar-fill { background: var(--ham); }
+.result-card.spam  .prob-bar-fill { background: var(--spam); }
+.result-card.maybe .prob-bar-fill { background: var(--maybe); }
+.result-card.ham   .prob-bar-fill { background: var(--ham); }
 
 .prob-bar-labels {
   display: flex;
@@ -369,8 +376,9 @@ h1 span { color: var(--accent); }
   margin-top: 2px;
 }
 
-.col-spam { color: var(--spam); }
-.col-ham  { color: var(--ham); }
+.col-spam  { color: var(--spam); }
+.col-maybe { color: var(--maybe); }
+.col-ham   { color: var(--ham); }
 
 /* ── Error ── */
 .error-banner {
