@@ -5,13 +5,10 @@ Run with: uvicorn api:app --reload
 """
 
 import json
-import os
-from pathlib import Path
 from typing import Optional
 
 import email
 from email import policy as email_policy
-import numpy as np
 import torch
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,11 +21,8 @@ from transformers import (
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-BASE_DIR = Path(__file__).parent
-MODELS_DIR = BASE_DIR / "models"
-
-ROBERTA_DIR = MODELS_DIR / "roberta_large_final"
-ELECTRA_DIR = MODELS_DIR / "electra_large_final"
+ROBERTA_REPO = "Dpedrinho01/trained_roberta_large"
+ELECTRA_REPO = "Dpedrinho01/trained_electra_large"
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -54,17 +48,20 @@ app.add_middleware(
 # ── Model loading ─────────────────────────────────────────────────────────────
 
 class ModelBundle:
-    def __init__(self, model_dir: Path, model_class, tokenizer_class=None):
-        self.model_dir = model_dir
-        self.tokenizer = AutoTokenizer.from_pretrained(str(model_dir))
-        self.model = model_class.from_pretrained(str(model_dir))
+    def __init__(self, repo_id: str, model_class):
+        print(f"Loading {repo_id} …")
+        self.tokenizer = AutoTokenizer.from_pretrained(repo_id)
+        self.model = model_class.from_pretrained(repo_id)
         self.model.to(DEVICE)
         self.model.eval()
 
-        threshold_path = model_dir / "threshold_config.json"
+        # Load threshold from the repo's threshold_config.json
+        from huggingface_hub import hf_hub_download
+        threshold_path = hf_hub_download(repo_id=repo_id, filename="threshold_config.json")
         with open(threshold_path) as f:
             cfg = json.load(f)
         self.threshold: float = cfg["recommended_threshold"]
+        print(f"  ✓ {repo_id} loaded (threshold={self.threshold}, device={DEVICE})")
 
     @torch.no_grad()
     def predict_proba(self, text: str) -> float:
@@ -89,11 +86,9 @@ electra_bundle: Optional[ModelBundle] = None
 @app.on_event("startup")
 def load_models():
     global roberta_bundle, electra_bundle
-    print("Loading RoBERTa …")
-    roberta_bundle = ModelBundle(ROBERTA_DIR, RobertaForSequenceClassification)
-    print("Loading ELECTRA …")
-    electra_bundle = ModelBundle(ELECTRA_DIR, ElectraForSequenceClassification)
-    print(f"Models loaded on {DEVICE}.")
+    roberta_bundle = ModelBundle(ROBERTA_REPO, RobertaForSequenceClassification)
+    electra_bundle = ModelBundle(ELECTRA_REPO, ElectraForSequenceClassification)
+    print(f"All models ready on {DEVICE}.")
 
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
@@ -217,7 +212,7 @@ def extract_text_from_eml(raw_bytes: bytes) -> str:
     if subject:
         parts.append(f"Subject: {subject}")
 
-    # From / To for extra signal
+    # From for extra signal
     from_addr = msg.get("from", "")
     if from_addr:
         parts.append(f"From: {from_addr}")
@@ -233,7 +228,6 @@ def extract_text_from_eml(raw_bytes: bytes) -> str:
                 # Fallback to HTML only if no plain text found
                 import html as html_lib
                 raw_html = part.get_content()
-                # Very light strip — remove tags
                 import re
                 text = re.sub(r"<[^>]+>", " ", raw_html)
                 text = html_lib.unescape(text)
@@ -267,5 +261,4 @@ async def predict_eml(file: UploadFile = File(...)):
     print(analyzed_text)
     print("=== [END EMAIL CONTENT] ===\n")
 
-    # Reuse the existing ensemble prediction logic
     return predict(PredictRequest(text=analyzed_text, model="ensemble"))

@@ -1,5 +1,5 @@
 // ── Config ──────────────────────────────────────────────────────────────────
-const API_BASE = 'http://localhost:8000';
+const API_BASE = 'https://dpedrinho01-api-host.hf.space';
 
 let selectedFile = null;
 
