@@ -46,7 +46,7 @@
     </div>
   </div>
 
-  <!-- Result -->
+  <!-- Spam Result -->
   <div class="result-card" id="result-card">
     <div class="result-header">
       <div class="verdict-icon" id="verdict-icon">🛡️</div>
@@ -76,6 +76,47 @@
         <div class="m-name">ELECTRA-Large</div>
         <div class="m-prob" id="electra-prob">—</div>
         <div class="m-verdict" id="electra-verdict">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Emotion Result -->
+  <div class="emotion-card" id="emotion-card">
+    <div class="emotion-header">
+      <div class="emotion-header-left">
+        <span class="emotion-card-icon">🧠</span>
+        <div>
+          <h3 class="emotion-title">Emotional Tone</h3>
+          <p class="emotion-subtitle" id="emotion-subtitle">Analysing the emotional signals in this email…</p>
+        </div>
+      </div>
+      <div class="emotion-detected-wrap" id="emotion-detected-wrap">
+        <!-- Detected emotion chips injected here -->
+      </div>
+    </div>
+
+    <!-- Top emotions bar chart -->
+    <div class="emotion-bars" id="emotion-bars">
+      <!-- Bar rows injected by JS -->
+    </div>
+
+    <!-- Per-model breakdown toggle -->
+    <div class="emotion-models-toggle" id="emotion-models-toggle" onclick="toggleEmotionBreakdown()">
+      <span>Model breakdown</span>
+      <span class="toggle-chevron" id="toggle-chevron">▾</span>
+    </div>
+    <div class="emotion-model-breakdown" id="emotion-model-breakdown">
+      <div class="em-col">
+        <div class="em-col-header">
+          <span class="em-dot roberta-dot"></span>RoBERTa-Large
+        </div>
+        <div class="em-chips" id="roberta-emotion-chips"></div>
+      </div>
+      <div class="em-col">
+        <div class="em-col-header">
+          <span class="em-dot electra-dot"></span>ELECTRA-Large
+        </div>
+        <div class="em-chips" id="electra-emotion-chips"></div>
       </div>
     </div>
   </div>

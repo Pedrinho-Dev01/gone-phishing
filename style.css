@@ -14,6 +14,23 @@
   --ham:       #2ecc8f;
   --ham-lo:    #2ecc8f18;
   --radius:    12px;
+
+  /* Emotion palette */
+  --emo-admiration: #f9a825;
+  --emo-anger:      #ef5350;
+  --emo-caring:     #ec407a;
+  --emo-confusion:  #ab47bc;
+  --emo-curiosity:  #42a5f5;
+  --emo-desire:     #ff7043;
+  --emo-excitement: #ffca28;
+  --emo-fear:       #7e57c2;
+  --emo-gratitude:  #26c6da;
+  --emo-joy:        #66bb6a;
+  --emo-neutral:    #78909c;
+  --emo-relief:     #26a69a;
+  --emo-sadness:    #5c6bc0;
+  --emo-surprise:   #ffa726;
+  --emo-unsure:     #8d6e63;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -243,7 +260,7 @@ h1 span { color: var(--accent); }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Result card ── */
+/* ── Spam Result card ── */
 .result-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -340,7 +357,7 @@ h1 span { color: var(--accent); }
   color: var(--muted);
 }
 
-/* ── Model breakdown ── */
+/* ── Model breakdown (spam) ── */
 .breakdown {
   border-top: 1px solid var(--border);
   padding: 18px 24px;
@@ -438,3 +455,293 @@ footer span { color: var(--border-hi); }
 }
 
 .copy-btn:hover { color: var(--text); }
+
+
+/* ════════════════════════════════════════════════════════════════
+   EMOTION CARD
+   ════════════════════════════════════════════════════════════════ */
+
+.emotion-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.4s 0.1s, transform 0.4s 0.1s;  /* slight delay after spam card */
+  margin-bottom: 24px;
+}
+
+.emotion-card.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Header */
+.emotion-header {
+  padding: 20px 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, #1a1c2a 0%, var(--surface) 100%);
+}
+
+.emotion-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.emotion-card-icon {
+  font-size: 26px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.emotion-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--text);
+}
+
+.emotion-subtitle {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* Detected chips in header */
+.emotion-detected-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding-top: 2px;
+}
+
+.emo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid;
+  letter-spacing: 0.01em;
+  animation: chipPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes chipPop {
+  from { opacity: 0; transform: scale(0.7); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.emo-chip-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* ── Emotion bar chart ── */
+.emotion-bars {
+  padding: 18px 24px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.emo-bar-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 40px;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  animation: fadeUp 0.3s ease forwards;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.emo-bar-label {
+  font-size: 12px;
+  color: var(--text);
+  text-align: right;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.emo-bar-label-icon { font-size: 14px; }
+
+.emo-bar-track {
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.emo-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  width: 0%;
+  transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.emo-bar-pct {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: right;
+}
+
+/* Threshold tick mark */
+.emo-bar-track {
+  position: relative;
+}
+
+.emo-threshold-tick {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 2px;
+  background: var(--border-hi);
+  border-radius: 1px;
+}
+
+/* ── Toggle ── */
+.emotion-models-toggle {
+  margin: 12px 24px 0;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  user-select: none;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.emotion-models-toggle:hover { border-color: var(--border-hi); color: var(--text); }
+
+.toggle-chevron {
+  transition: transform 0.2s;
+  font-size: 13px;
+}
+
+.toggle-chevron.open { transform: rotate(180deg); }
+
+/* ── Per-model breakdown ── */
+.emotion-model-breakdown {
+  display: none;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding: 14px 24px 20px;
+}
+
+.emotion-model-breakdown.open {
+  display: grid;
+}
+
+.em-col-header {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.em-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.roberta-dot { background: var(--accent); }
+.electra-dot { background: #ff6ea8; }
+
+.em-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.em-chip-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.em-chip-row .em-label {
+  width: 85px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text);
+}
+
+.em-chip-row .em-label-icon { font-size: 13px; }
+
+.em-chip-row .em-bar-mini {
+  flex: 1;
+  height: 5px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.em-chip-row .em-bar-mini-fill {
+  height: 100%;
+  border-radius: 3px;
+  width: 0%;
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.em-chip-row .em-pct {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  width: 30px;
+  text-align: right;
+}
+
+.em-chip-row .em-detected-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--muted);
+  flex-shrink: 0;
+}
+
+.em-chip-row.detected .em-detected-dot {
+  background: var(--ham);
+}
+
+/* ── No-emotion state ── */
+.emotion-empty {
+  padding: 24px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
