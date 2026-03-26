@@ -2,15 +2,11 @@
 
 A spam detection and emotion analysis tool for `.eml` email files, powered by an ensemble of fine-tuned **RoBERTa-Large** and **ELECTRA-Large** models.
 
----
-
 ## What it does
 
 - **Spam detection** — classifies emails as ham, maybe spam, or spam using an averaged ensemble of two binary classifiers, each with its own calibrated threshold.
 - **Emotion analysis** — detects up to 15 emotions (admiration, anger, curiosity, joy, etc.) using a multi-label ensemble with per-class thresholds.
 - **Web UI** — drag-and-drop `.eml` files onto the frontend and get instant results with animated probability bars and per-model breakdowns.
-
----
 
 ## Models
 
@@ -22,8 +18,6 @@ A spam detection and emotion analysis tool for `.eml` email files, powered by an
 | ELECTRA-Large (emotion) | `Dpedrinho01/trained_electra_emotion` | Multi-label emotion |
 
 Each model ships a config file (`threshold_config.json` for spam, `model_config.json` for emotion) that is loaded from the Hugging Face Hub at startup.
-
----
 
 ## API
 
@@ -53,8 +47,6 @@ The `/predict/eml` endpoint returns a combined response:
 }
 ```
 
----
-
 ## Project structure
 
 ```
@@ -64,8 +56,6 @@ The `/predict/eml` endpoint returns a combined response:
 ├── app.js          # Frontend logic
 └── requirements.txt
 ```
-
----
 
 ## Stack
 
