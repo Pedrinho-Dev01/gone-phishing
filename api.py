@@ -238,14 +238,19 @@ def extract_text_from_eml(raw_bytes: bytes) -> str:
 
     return "\n".join(parts).strip()
 
+class EmlRequest(BaseModel):
+    filename: str
+    content: str  # base64 encoded
 
 @app.post("/predict/eml", response_model=PredictResponse)
-async def predict_eml(file: UploadFile = File(...)):
-    if not file.filename.endswith(".eml"):
+async def predict_eml(req: EmlRequest):
+    if not req.filename.endswith(".eml"):
         raise HTTPException(status_code=422, detail="Only .eml files are accepted.")
 
-    raw = await file.read()
-    if len(raw) > 5 * 1024 * 1024:  # 5 MB guard
+    import base64
+    raw = base64.b64decode(req.content)
+
+    if len(raw) > 5 * 1024 * 1024:
         raise HTTPException(status_code=413, detail="File too large (max 5 MB).")
 
     try:
