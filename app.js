@@ -3,23 +3,15 @@ const API_BASE = 'https://dpedrinho01-api-host.hf.space';
 
 let selectedFile = null;
 
-// Emotion metadata: icon + CSS variable name
+// Emotion metadata: icon + CSS variable name — 8 consolidated classes
 const EMOTION_META = {
-  admiration: { icon: '🤩', color: 'var(--emo-admiration)' },
-  anger:      { icon: '😡', color: 'var(--emo-anger)' },
-  caring:     { icon: '🤗', color: 'var(--emo-caring)' },
-  confusion:  { icon: '😕', color: 'var(--emo-confusion)' },
-  curiosity:  { icon: '🧐', color: 'var(--emo-curiosity)' },
-  desire:     { icon: '🔥', color: 'var(--emo-desire)' },
-  excitement: { icon: '🎉', color: 'var(--emo-excitement)' },
-  fear:       { icon: '😨', color: 'var(--emo-fear)' },
-  gratitude:  { icon: '🙏', color: 'var(--emo-gratitude)' },
-  joy:        { icon: '😊', color: 'var(--emo-joy)' },
-  neutral:    { icon: '😐', color: 'var(--emo-neutral)' },
-  relief:     { icon: '😮‍💨', color: 'var(--emo-relief)' },
-  sadness:    { icon: '😢', color: 'var(--emo-sadness)' },
-  surprise:   { icon: '😲', color: 'var(--emo-surprise)' },
-  unsure:     { icon: '🤷', color: 'var(--emo-unsure)' },
+  positive_arousal: { icon: '🎉', color: 'var(--emo-excitement)' },
+  warmth:           { icon: '🤗', color: 'var(--emo-caring)' },
+  threat:           { icon: '😨', color: 'var(--emo-fear)' },
+  curiosity:        { icon: '🧐', color: 'var(--emo-curiosity)' },
+  confusion:        { icon: '😕', color: 'var(--emo-confusion)' },
+  sadness:          { icon: '😢', color: 'var(--emo-sadness)' },
+  relief:           { icon: '😮‍💨', color: 'var(--emo-relief)' },
 };
 
 // ── File input ───────────────────────────────────────────────────────────────
@@ -89,13 +81,10 @@ async function runScan() {
 
     const data = await res.json();
 
-    // New API returns { spam: {...}, emotion: {...} }
-    // Support old flat response too, for backwards compatibility
     if (data.spam && data.emotion) {
       renderSpamResult(data.spam);
       renderEmotionResult(data.emotion);
     } else {
-      // Old flat response — spam only
       renderSpamResult(data);
     }
   } catch (e) {
@@ -162,22 +151,22 @@ function renderSpamResult(data) {
 }
 
 function modelColorClass(prob, threshold) {
-  if (prob >= 0.5)      return 'col-spam';
+  if (prob >= 0.5)       return 'col-spam';
   if (prob >= threshold) return 'col-maybe';
   return 'col-ham';
 }
 
 function modelVerdictLabel(prob, threshold) {
-  if (prob >= 0.5)      return '🚨 Spam';
+  if (prob >= 0.5)       return '🚨 Spam';
   if (prob >= threshold) return '⚠️ Maybe';
   return '✅ Ham';
 }
 
 // ── Emotion result renderer ───────────────────────────────────────────────────
 function renderEmotionResult(data) {
-  const card    = document.getElementById('emotion-card');
+  const card     = document.getElementById('emotion-card');
   const detected = data.detected_emotions || [];
-  const scores   = data.all_scores || [];      // sorted by probability desc
+  const scores   = data.all_scores || [];
 
   // Subtitle
   const subtitle = document.getElementById('emotion-subtitle');
@@ -195,22 +184,22 @@ function renderEmotionResult(data) {
     const chip = document.createElement('span');
     chip.className = 'emo-chip';
     chip.style.cssText = `color:${meta.color};border-color:${meta.color}33;background:${meta.color}18;animation-delay:${i * 60}ms`;
-    chip.innerHTML = `<span class="emo-chip-dot"></span>${meta.icon} ${emo}`;
+    chip.innerHTML = `<span class="emo-chip-dot"></span>${meta.icon} ${emo.replace('_', ' ')}`;
     chipsWrap.appendChild(chip);
   });
 
-  // Bar chart — show top 8 by probability
+  // Bar chart — show all 8 classes sorted by probability
   const barsContainer = document.getElementById('emotion-bars');
   barsContainer.innerHTML = '';
 
   if (scores.length === 0) {
     barsContainer.innerHTML = '<div class="emotion-empty">No emotion scores returned.</div>';
   } else {
-    const topN = scores.slice(0, 8);
-    topN.forEach((score, i) => {
+    scores.forEach((score, i) => {
       const meta  = EMOTION_META[score.emotion] || { icon: '•', color: 'var(--muted)' };
       const pct   = Math.round(score.probability * 100);
       const thPct = Math.round(score.threshold * 100);
+      const label = score.emotion.replace('_', ' ');
 
       const row = document.createElement('div');
       row.className = 'emo-bar-row';
@@ -218,18 +207,17 @@ function renderEmotionResult(data) {
       row.innerHTML = `
         <div class="emo-bar-label">
           <span class="emo-bar-label-icon">${meta.icon}</span>
-          <span>${score.emotion}</span>
+          <span>${label}</span>
         </div>
         <div class="emo-bar-track">
           <div class="emo-bar-fill" data-pct="${pct}" style="background:${meta.color}"></div>
           <div class="emo-threshold-tick" style="left:${thPct}%"></div>
         </div>
-        <div class="emo-bar-pct ${score.detected ? '' : ''}" style="color:${score.detected ? meta.color : 'var(--muted)'}">${pct}%</div>
+        <div class="emo-bar-pct" style="color:${score.detected ? meta.color : 'var(--muted)'}">${pct}%</div>
       `;
       barsContainer.appendChild(row);
     });
 
-    // Animate bars after paint
     requestAnimationFrame(() => {
       barsContainer.querySelectorAll('.emo-bar-fill').forEach(fill => {
         fill.style.width = fill.dataset.pct + '%';
@@ -237,15 +225,15 @@ function renderEmotionResult(data) {
     });
   }
 
-  // Per-model breakdown
+  // Per-model breakdown — three columns now
   renderModelEmotionChips('roberta-emotion-chips', data.roberta, 'var(--accent)');
   renderModelEmotionChips('electra-emotion-chips', data.electra, '#ff6ea8');
+  renderModelEmotionChips('deberta-emotion-chips', data.deberta, '#4dd0e1');
 
   // Reset toggle state
   document.getElementById('emotion-model-breakdown').classList.remove('open');
   document.getElementById('toggle-chevron').classList.remove('open');
 
-  // Show card
   requestAnimationFrame(() => { card.classList.add('visible'); });
 }
 
@@ -254,17 +242,16 @@ function renderModelEmotionChips(containerId, modelData, accentColor) {
   container.innerHTML = '';
   if (!modelData || !modelData.emotions) return;
 
-  // Show top 8 by probability
-  const top = modelData.emotions.slice(0, 8);
-  top.forEach(score => {
-    const meta = EMOTION_META[score.emotion] || { icon: '•', color: 'var(--muted)' };
-    const pct  = Math.round(score.probability * 100);
-    const row  = document.createElement('div');
+  modelData.emotions.forEach(score => {
+    const meta  = EMOTION_META[score.emotion] || { icon: '•', color: 'var(--muted)' };
+    const pct   = Math.round(score.probability * 100);
+    const label = score.emotion.replace('_', ' ');
+    const row   = document.createElement('div');
     row.className = `em-chip-row${score.detected ? ' detected' : ''}`;
     row.innerHTML = `
       <div class="em-label">
         <span class="em-label-icon">${meta.icon}</span>
-        <span>${score.emotion}</span>
+        <span>${label}</span>
       </div>
       <div class="em-bar-mini">
         <div class="em-bar-mini-fill" data-pct="${pct}" style="background:${meta.color}88"></div>
@@ -275,7 +262,6 @@ function renderModelEmotionChips(containerId, modelData, accentColor) {
     container.appendChild(row);
   });
 
-  // Animate mini bars
   requestAnimationFrame(() => {
     container.querySelectorAll('.em-bar-mini-fill').forEach(fill => {
       fill.style.width = fill.dataset.pct + '%';
