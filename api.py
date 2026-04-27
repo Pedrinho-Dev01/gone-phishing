@@ -1,6 +1,6 @@
 """
 Spam Detection + Emotion Analysis API
-Ensemble of RoBERTa-Large + ELECTRA-Large + DeBERTa-v3-Large classifiers.
+Ensemble of RoBERTa-Large + ELECTRA-Large classifiers.
 Run with: uvicorn api:app --reload
 """
 
@@ -18,7 +18,6 @@ from transformers import (
     AutoModelForSequenceClassification,
     ElectraForSequenceClassification,
     RobertaForSequenceClassification,
-    DebertaV2ForSequenceClassification,
 )
 
 # ── Config ────────────────────────────────────────────────────────────────────
@@ -27,7 +26,6 @@ ROBERTA_SPAM_REPO    = "Dpedrinho01/trained_roberta_large"
 ELECTRA_SPAM_REPO    = "Dpedrinho01/trained_electra_large"
 ROBERTA_EMOTION_REPO = "Dpedrinho01/trained_roberta_emotion"
 ELECTRA_EMOTION_REPO = "Dpedrinho01/trained_electra_emotion"
-DEBERTA_EMOTION_REPO = "Dpedrinho01/trained_deberta_emotion"
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -38,7 +36,7 @@ MAYBE_SPAM_UPPER = 0.50   # [threshold, MAYBE_SPAM_UPPER) → "maybe spam"
 
 app = FastAPI(
     title="Spam Detection + Emotion Analysis API",
-    description="Ensemble of RoBERTa-Large + ELECTRA-Large + DeBERTa-v3-Large for spam/ham classification and emotion detection.",
+    description="Ensemble of RoBERTa-Large + ELECTRA-Large for spam/ham classification and emotion detection.",
     version="3.0.0",
 )
 
@@ -127,25 +125,17 @@ roberta_spam_bundle: Optional[SpamModelBundle] = None
 electra_spam_bundle: Optional[SpamModelBundle] = None
 roberta_emotion_bundle: Optional[EmotionModelBundle] = None
 electra_emotion_bundle: Optional[EmotionModelBundle] = None
-deberta_emotion_bundle: Optional[EmotionModelBundle] = None
 
 
 @app.on_event("startup")
 def load_models():
     global roberta_spam_bundle, electra_spam_bundle
-    global roberta_emotion_bundle, electra_emotion_bundle, deberta_emotion_bundle
+    global roberta_emotion_bundle, electra_emotion_bundle
 
     roberta_spam_bundle   = SpamModelBundle(ROBERTA_SPAM_REPO, RobertaForSequenceClassification)
     electra_spam_bundle   = SpamModelBundle(ELECTRA_SPAM_REPO, ElectraForSequenceClassification)
     roberta_emotion_bundle = EmotionModelBundle(ROBERTA_EMOTION_REPO, RobertaForSequenceClassification)
     electra_emotion_bundle = EmotionModelBundle(ELECTRA_EMOTION_REPO, ElectraForSequenceClassification)
-    # DeBERTa-v3 tokenizer requires sentencepiece; use_fast=False avoids the
-    # tiktoken conversion bug present in some transformers versions.
-    deberta_emotion_bundle = EmotionModelBundle(
-        DEBERTA_EMOTION_REPO,
-        DebertaV2ForSequenceClassification,
-        use_fast_tokenizer=False,
-    )
     print(f"All models ready on {DEVICE}.")
 
 
@@ -190,7 +180,6 @@ class EmotionPredictResponse(BaseModel):
     all_scores: list[EmotionScore]  # ensemble averaged, sorted by probability
     roberta: Optional[EmotionModelResult] = None
     electra: Optional[EmotionModelResult] = None
-    deberta: Optional[EmotionModelResult] = None
 
 
 class EmlRequest(BaseModel):
@@ -213,17 +202,15 @@ def classify_spam(proba: float, threshold: float) -> dict:
 def ensemble_emotions(
     roberta_probas: dict[str, float],
     electra_probas: dict[str, float],
-    deberta_probas: dict[str, float],
     threshold_per_class: dict[str, float],
 ) -> tuple[list[str], list[EmotionScore]]:
-    """Average all three models' probabilities and apply per-class thresholds."""
+    """Average both models' probabilities and apply per-class thresholds."""
     all_scores: list[EmotionScore] = []
     detected: list[str] = []
 
     for emotion, r_prob in roberta_probas.items():
         e_prob = electra_probas.get(emotion, 0.0)
-        d_prob = deberta_probas.get(emotion, 0.0)
-        avg_prob = round((r_prob + e_prob + d_prob) / 3, 4)
+        avg_prob = round((r_prob + e_prob) / 2, 4)
         threshold = threshold_per_class.get(emotion, 0.4)
         is_detected = avg_prob >= threshold
         all_scores.append(EmotionScore(
@@ -302,7 +289,6 @@ def health():
         "emotion_models_loaded": (
             roberta_emotion_bundle is not None
             and electra_emotion_bundle is not None
-            and deberta_emotion_bundle is not None
         ),
     }
 
@@ -362,13 +348,11 @@ def predict_emotion(req: EmotionPredictRequest):
 
     roberta_probas = roberta_emotion_bundle.predict_proba(req.text)
     electra_probas = electra_emotion_bundle.predict_proba(req.text)
-    deberta_probas = deberta_emotion_bundle.predict_proba(req.text)
 
     # Use roberta's per-class thresholds as the ensemble reference
     detected, all_scores = ensemble_emotions(
         roberta_probas,
         electra_probas,
-        deberta_probas,
         roberta_emotion_bundle.threshold_per_class,
     )
 
@@ -378,7 +362,6 @@ def predict_emotion(req: EmotionPredictRequest):
         all_scores=all_scores,
         roberta=_emotion_model_result(roberta_emotion_bundle, roberta_probas),
         electra=_emotion_model_result(electra_emotion_bundle, electra_probas),
-        deberta=_emotion_model_result(deberta_emotion_bundle, deberta_probas),
     )
 
 

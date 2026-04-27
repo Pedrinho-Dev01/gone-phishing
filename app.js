@@ -3,7 +3,7 @@ const API_BASE = 'https://dpedrinho01-api-host.hf.space';
 
 let selectedFile = null;
 
-// Emotion metadata: icon + CSS variable name — 8 consolidated classes
+// Emotion metadata: icon + CSS variable name — 7 consolidated classes
 const EMOTION_META = {
   positive_arousal: { icon: '🎉', color: 'var(--emo-excitement)' },
   warmth:           { icon: '🤗', color: 'var(--emo-caring)' },
@@ -188,7 +188,7 @@ function renderEmotionResult(data) {
     chipsWrap.appendChild(chip);
   });
 
-  // Bar chart — show all 8 classes sorted by probability
+  // Bar chart — show all classes sorted by probability
   const barsContainer = document.getElementById('emotion-bars');
   barsContainer.innerHTML = '';
 
@@ -225,10 +225,9 @@ function renderEmotionResult(data) {
     });
   }
 
-  // Per-model breakdown — three columns now
+  // Per-model breakdown — two columns
   renderModelEmotionChips('roberta-emotion-chips', data.roberta, 'var(--accent)');
   renderModelEmotionChips('electra-emotion-chips', data.electra, '#ff6ea8');
-  renderModelEmotionChips('deberta-emotion-chips', data.deberta, '#4dd0e1');
 
   // Reset toggle state
   document.getElementById('emotion-model-breakdown').classList.remove('open');

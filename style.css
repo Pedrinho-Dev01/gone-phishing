@@ -594,7 +594,7 @@ footer {
 /* ── Per-model breakdown — 3 columns ── */
 .emotion-model-breakdown {
   display: none;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 14px;
   padding: 14px 24px 20px;
 }
@@ -623,7 +623,6 @@ footer {
 
 .roberta-dot { background: var(--accent); }
 .electra-dot { background: #ff6ea8; }
-.deberta-dot { background: #4dd0e1; }
 
 .em-chips {
   display: flex;
