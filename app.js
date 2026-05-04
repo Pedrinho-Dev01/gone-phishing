@@ -5,9 +5,9 @@ let selectedFile = null;
 
 // Emotion metadata: icon + CSS variable name — 7 consolidated classes
 const EMOTION_META = {
-  positive_arousal: { icon: '🎉', color: 'var(--emo-excitement)' },
-  warmth:           { icon: '🤗', color: 'var(--emo-caring)' },
-  threat:           { icon: '😨', color: 'var(--emo-fear)' },
+  positive_arousal: { icon: '🎉', color: 'var(--emo-positive_arousal)' },
+  warmth:           { icon: '🤗', color: 'var(--emo-warmth)' },
+  threat:           { icon: '😨', color: 'var(--emo-threat)' },
   curiosity:        { icon: '🧐', color: 'var(--emo-curiosity)' },
   confusion:        { icon: '😕', color: 'var(--emo-confusion)' },
   sadness:          { icon: '😢', color: 'var(--emo-sadness)' },
