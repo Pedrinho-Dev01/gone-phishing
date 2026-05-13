@@ -15,7 +15,6 @@
   --ham-lo:    #2ecc8f18;
   --radius:    12px;
 
-  /* Emotion palette — 8 consolidated classes */
   --emo-positive_arousal: #ffca28;
   --emo-warmth:           #ec407a;
   --emo-threat:           #7e57c2;
@@ -23,6 +22,32 @@
   --emo-confusion:        #ab47bc;
   --emo-sadness:          #5c6bc0;
   --emo-relief:           #26a69a;
+}
+
+/* ── Light mode overrides ── */
+body.light {
+  --bg:        #f5f6fa;
+  --surface:   #ffffff;
+  --border:    #dde1ee;
+  --border-hi: #b8bfd8;
+  --text:      #1a1c2e;
+  --muted:     #8289a8;
+  --accent:    #5056d6;
+  --accent-lo: #5056d618;
+  --spam:      #d93656;
+  --spam-lo:   #d9365612;
+  --maybe:     #c97d10;
+  --maybe-lo:  #c97d1012;
+  --ham:       #1a9e6e;
+  --ham-lo:    #1a9e6e12;
+
+  --emo-positive_arousal: #c49000;
+  --emo-warmth:           #c42060;
+  --emo-threat:           #5e38a8;
+  --emo-curiosity:        #1565c0;
+  --emo-confusion:        #7b1fa2;
+  --emo-sadness:          #3949ab;
+  --emo-relief:           #00796b;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -38,6 +63,7 @@ body {
   align-items: center;
   padding: 60px 20px 100px;
   overflow-x: hidden;
+  transition: background 0.25s, color 0.25s;
 }
 
 /* ── Background grid ── */
@@ -76,6 +102,7 @@ body::after {
 header {
   margin-bottom: 56px;
   text-align: center;
+  position: relative;
 }
 
 h1 {
@@ -89,6 +116,34 @@ h1 {
 
 h1 span { color: var(--accent); }
 
+/* ── Theme toggle ── */
+.theme-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+  line-height: 1;
+}
+
+.theme-toggle:hover {
+  border-color: var(--border-hi);
+  transform: scale(1.08);
+}
+
+.theme-toggle:active {
+  transform: scale(0.95);
+}
+
 /* ── Input card ── */
 .input-card {
   background: var(--surface);
@@ -96,7 +151,7 @@ h1 span { color: var(--accent); }
   border-radius: 16px;
   padding: 24px;
   margin-bottom: 24px;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, background 0.25s;
 }
 
 .input-card:focus-within { border-color: var(--border-hi); }
@@ -218,7 +273,7 @@ h1 span { color: var(--accent); }
   overflow: hidden;
   opacity: 0;
   transform: translateY(16px);
-  transition: opacity 0.35s, transform 0.35s;
+  transition: opacity 0.35s, transform 0.35s, background 0.25s, border-color 0.25s;
   margin-bottom: 24px;
 }
 
@@ -381,6 +436,7 @@ footer {
   font-family: 'DM Mono', monospace;
   font-size: 12px;
   color: var(--muted);
+  transition: background 0.25s, border-color 0.25s;
 }
 
 .api-hint code {
@@ -416,13 +472,16 @@ footer {
   overflow: hidden;
   opacity: 0;
   transform: translateY(16px);
-  transition: opacity 0.4s 0.1s, transform 0.4s 0.1s;
+  transition: opacity 0.4s 0.1s, transform 0.4s 0.1s, background 0.25s, border-color 0.25s;
   margin-bottom: 24px;
+  /* Hidden by default — only shown when phishing/maybe-spam is detected */
+  display: none;
 }
 
 .emotion-card.visible {
   opacity: 1;
   transform: translateY(0);
+  display: block;
 }
 
 /* Header */
@@ -434,6 +493,10 @@ footer {
   flex-wrap: wrap;
   border-bottom: 1px solid var(--border);
   background: linear-gradient(135deg, #1a1c2a 0%, var(--surface) 100%);
+}
+
+body.light .emotion-header {
+  background: linear-gradient(135deg, #eef0f8 0%, var(--surface) 100%);
 }
 
 .emotion-header-left {
@@ -591,7 +654,7 @@ footer {
 
 .toggle-chevron.open { transform: rotate(180deg); }
 
-/* ── Per-model breakdown — 3 columns ── */
+/* ── Per-model breakdown — 2 columns ── */
 .emotion-model-breakdown {
   display: none;
   grid-template-columns: 1fr 1fr;

@@ -3,7 +3,7 @@ const API_BASE = 'https://dpedrinho01-api-host.hf.space';
 
 let selectedFile = null;
 
-// Emotion metadata: icon + CSS variable name — 7 consolidated classes
+// Emotion metadata: icon + CSS variable name
 const EMOTION_META = {
   positive_arousal: { icon: '🎉', color: 'var(--emo-positive_arousal)' },
   warmth:           { icon: '🤗', color: 'var(--emo-warmth)' },
@@ -13,6 +13,31 @@ const EMOTION_META = {
   sadness:          { icon: '😢', color: 'var(--emo-sadness)' },
   relief:           { icon: '😮‍💨', color: 'var(--emo-relief)' },
 };
+
+// ── Theme toggle ─────────────────────────────────────────────────────────────
+const themeToggle = document.getElementById('theme-toggle');
+const themeIcon   = document.getElementById('theme-icon');
+
+function applyTheme(light) {
+  if (light) {
+    document.body.classList.add('light');
+    themeIcon.textContent = '🌙';
+    themeToggle.title = 'Switch to dark mode';
+    localStorage.setItem('theme', 'light');
+  } else {
+    document.body.classList.remove('light');
+    themeIcon.textContent = '☀️';
+    themeToggle.title = 'Switch to light mode';
+    localStorage.setItem('theme', 'dark');
+  }
+}
+
+// Restore saved preference on load
+applyTheme(localStorage.getItem('theme') === 'light');
+
+themeToggle.addEventListener('click', () => {
+  applyTheme(!document.body.classList.contains('light'));
+});
 
 // ── File input ───────────────────────────────────────────────────────────────
 const emlInput = document.getElementById('eml-input');
@@ -83,7 +108,10 @@ async function runScan() {
 
     if (data.spam && data.emotion) {
       renderSpamResult(data.spam);
-      renderEmotionResult(data.emotion);
+      // Only show emotion analysis when phishing is detected
+      if (data.spam.is_spam || data.spam.maybe_spam) {
+        renderEmotionResult(data.emotion);
+      }
     } else {
       renderSpamResult(data);
     }
@@ -120,7 +148,7 @@ function renderSpamResult(data) {
   } else {
     document.getElementById('verdict-icon').textContent = '✅';
     document.getElementById('verdict-text').textContent = 'Looks clean';
-    document.getElementById('verdict-sub').textContent  = 'No spam signals found — classified as ham';
+    document.getElementById('verdict-sub').textContent  = 'No spam signals found — classified as legitimate';
   }
 
   document.getElementById('prob-big').textContent = pct + '%';
@@ -159,7 +187,7 @@ function modelColorClass(prob, threshold) {
 function modelVerdictLabel(prob, threshold) {
   if (prob >= 0.5)       return '🚨 Spam';
   if (prob >= threshold) return '⚠️ Maybe';
-  return '✅ Ham';
+  return '✅ Legitimate';
 }
 
 // ── Emotion result renderer ───────────────────────────────────────────────────
@@ -287,6 +315,7 @@ function hideResult() {
   const spamCard    = document.getElementById('result-card');
   const emotionCard = document.getElementById('emotion-card');
   spamCard.classList.remove('visible');
+  // Fully hide emotion card (not just fade — remove display too via class removal)
   emotionCard.classList.remove('visible');
   document.getElementById('prob-bar').style.width = '0%';
 }

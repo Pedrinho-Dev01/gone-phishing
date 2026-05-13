@@ -13,6 +13,9 @@
 
   <header>
     <h1>Gone<br /><span>Phishing.</span></h1>
+    <button class="theme-toggle" id="theme-toggle" title="Toggle light/dark mode" aria-label="Toggle light/dark mode">
+      <span class="theme-icon" id="theme-icon">☀️</span>
+    </button>
   </header>
 
   <!-- API URL hint -->
@@ -61,7 +64,7 @@
         <div class="prob-bar-fill" id="prob-bar"></div>
       </div>
       <div class="prob-bar-labels">
-        <span>Ham</span>
+        <span>Legitimate</span>
         <span id="threshold-label">Threshold: 35%</span>
         <span>Spam</span>
       </div>
@@ -80,7 +83,7 @@
     </div>
   </div>
 
-  <!-- Emotion Result -->
+  <!-- Emotion Result — only shown when phishing is detected -->
   <div class="emotion-card" id="emotion-card">
     <div class="emotion-header">
       <div class="emotion-header-left">
